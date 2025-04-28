@@ -17,25 +17,24 @@ def main():
     optimal_params = variational_quantum_compression(data)
     print(f"Optimal parameters for quantum compression: {optimal_params}")
 
-    # Create and simulate quantum circuit with optimal parameters
+    # Create quantum circuit
     qc = create_variational_circuit(data)
-    counts = simulate_quantum_circuit_with_noise(qc)
+
+    # 🛠 Bind optimal parameters into the circuit
+    param_dict = dict(zip(qc.parameters, optimal_params))
+    qc_bound = qc.assign_parameters(param_dict)
+    qc_bound.measure_all()
+
+    # Simulate bound circuit
+    counts = simulate_quantum_circuit_with_noise(qc_bound)
     print("Quantum Compression Results with Noise Mitigation:", counts)
     visualize_quantum_results(counts)
 
-    # Machine Learning Model Training
-    n_samples = 100
-    np.random.seed(42)
-    X_data = np.random.randint(2, size=(n_samples, len(data)))
-    y_data = np.sum(X_data, axis=1)
-    model = build_and_train_model(X_data, y_data)
-    accuracy = evaluate_model(model, X_data, y_data)
-    print(f"Accuracy without compression: {accuracy:.2f}")
 
     # Neural Network for Predicting Compressibility
-    nn_model = build_and_train_neural_network()
-    compressibility_prediction = predict_compressibility(nn_model, data)
-    print(f"Predicted compressibility: {compressibility_prediction:.2f}")
+    #nn_model = build_and_train_neural_network()
+    #compressibility_prediction = predict_compressibility(nn_model, data)
+    #print(f"Predicted compressibility: {compressibility_prediction:.2f}")
 
     # Quantum Autoencoder Compression
     qc_autoencoder = quantum_autoencoder_compression(data)
