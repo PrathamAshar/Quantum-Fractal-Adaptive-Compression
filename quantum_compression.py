@@ -1,10 +1,11 @@
-from qiskit import QuantumCircuit, Aer, transpile, assemble, execute
+from qiskit import QuantumCircuit, transpile
 from qiskit.circuit.library import EfficientSU2
-from qiskit.algorithms.optimizers import COBYLA
-from qiskit.algorithms import VQE
-from qiskit.utils import QuantumInstance
-from qiskit.providers.aer import AerSimulator
+from qiskit_algorithms.optimizers import COBYLA
+from qiskit_algorithms import VQE
+from qiskit.quantum_info import SparsePauliOp
+from qiskit_aer import AerSimulator
 from qiskit.visualization import plot_histogram
+from qiskit_aer.primitives import Estimator
 
 # Function to create a variational quantum circuit
 def create_variational_circuit(data):
@@ -19,16 +20,21 @@ def variational_quantum_compression(data):
     num_qubits = len(data)
     qc = create_variational_circuit(data)
     optimizer = COBYLA(maxiter=100)
-    vqe = VQE(qc, optimizer=optimizer, quantum_instance=QuantumInstance(Aer.get_backend('statevector_simulator')))
-    result = vqe.compute_minimum_eigenvalue()
+    
+    # Use the Estimator primitive instead of QuantumInstance
+    estimator = Estimator()
+    vqe = VQE(estimator, ansatz=qc, optimizer=optimizer)
+    
+    # Need an operator for VQE - using a simple default Hamiltonian
+    operator = SparsePauliOp.from_list([("Z" * num_qubits, 1)])
+    result = vqe.compute_minimum_eigenvalue(operator)
     return result.optimal_point
 
 # Function to simulate quantum circuit with noise mitigation
 def simulate_quantum_circuit_with_noise(qc):
     simulator = AerSimulator()
     t_qc = transpile(qc, simulator)
-    job = execute(t_qc, backend=simulator, shots=1024)
-    result = job.result()
+    result = simulator.run(t_qc, shots=1024).result()
     counts = result.get_counts()
     return counts
 
